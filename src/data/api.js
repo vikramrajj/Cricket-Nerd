@@ -116,3 +116,35 @@ export const fetchUpcomingMatches = async () => {
     { id: 'u7', series: 'Big Bash League', teams: 'Sydney Sixers v Perth Scorchers', venue: 'SCG, Sydney', date: addDays(8), time: '19:15 Local', type: 'T20' }
   ];
 };
+
+// Scrapes rich full match scoreboards from Cricinfo Next.js payloads
+export const fetchMatchDetails = async (cricinfoUrl) => {
+  if (!cricinfoUrl) return null;
+
+  try {
+    const response = await fetch(`${PROXY_URL}${encodeURIComponent(cricinfoUrl)}`);
+    const data = await response.json();
+    if (!data.contents) throw new Error("No HTML contents");
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(data.contents, "text/html");
+    const scriptTag = doc.getElementById('__NEXT_DATA__');
+    if (!scriptTag) throw new Error("__NEXT_DATA__ payload missing");
+
+    const jsonData = JSON.parse(scriptTag.textContent);
+    const content = jsonData.props?.appPageProps?.data?.data?.content;
+
+    if (!content) throw new Error("Content node missing");
+
+    return {
+      innings: content.innings || [],
+      commentary: content.recentBallCommentary || [],
+      players: content.matchPlayers || {},
+      status: content.match?.statusText || 'Live',
+      livePerformance: content.livePerformance || null
+    };
+  } catch (err) {
+    console.error("Scraping Detailed Match stats failed:", err);
+    return null; // Fail gracefully: component handles null gracefully
+  }
+};

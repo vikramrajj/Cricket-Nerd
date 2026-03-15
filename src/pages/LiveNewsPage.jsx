@@ -204,14 +204,26 @@ const MatchCenterModal = ({ match, data, onClose }) => {
           {activeTab === 'squads' && renderSquads()}
           {activeTab === 'commentary' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              {(data?.commentary || []).slice(0, 10).map((cmt, idx) => (
-                <div key={idx} className="glass-panel" style={{ padding: '1rem', borderRadius: '10px', fontSize: '0.9rem', color: '#fff' }}>
-                  <div style={{ color: 'var(--accent-gold)', fontWeight: 'bold', fontSize: '0.8rem', marginBottom: '0.3rem' }}>
-                    {cmt.overNumber ? `Over ${cmt.overNumber}` : 'Update'}
+              {(data?.commentary || []).slice(0, 15).map((cmt, idx) => {
+                // Helper to extract text from modern Cricinfo commentTextItems Node arrays
+                const text = cmt.commentTextItems 
+                  ? cmt.commentTextItems.map(item => item.text || item.content || '').join(' ')
+                  : cmt.commentText || cmt.text || cmt.title || 'Match update ticker item.';
+                
+                const overDisplay = cmt.overActual ? `Over ${cmt.overActual}` : (cmt.overNumber ? `Over ${cmt.overNumber}` : 'Update');
+
+                return (
+                  <div key={idx} className="glass-panel" style={{ padding: '1rem', borderRadius: '10px', fontSize: '0.9rem', color: '#fff', borderLeft: cmt.isWicket ? '4px solid #ff4d4d' : '4px solid transparent' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                      <div style={{ color: 'var(--accent-gold)', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                        {overDisplay}
+                      </div>
+                      {cmt.isWicket && <span style={{ color: '#ff4d4d', fontWeight: 'bold', fontSize: '0.75rem' }}>WICKET</span>}
+                    </div>
+                    <p style={{ margin: 0, color: '#e0e0e0', lineHeight: '1.5' }}>{text.replace(/<[^>]*>/g, '')}</p>
                   </div>
-                  <p style={{ margin: 0, color: 'var(--text-secondary)' }}>{cmt.title || cmt.text || 'Flash update ticker item.'}</p>
-                </div>
-              ))}
+                );
+              })}
               {(!data || !data.commentary || data.commentary.length === 0) && <p style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>Commentary update stream setup unavailable.</p>}
             </div>
           )}

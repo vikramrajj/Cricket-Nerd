@@ -117,12 +117,38 @@ export const fetchUpcomingMatches = async () => {
   ];
 };
 
-// Scrapes rich full match scoreboards from Cricinfo Legacy JSON APIs
 export const fetchMatchDetails = async (cricinfoUrl) => {
   if (!cricinfoUrl) return null;
 
   try {
-    // 1. Extract Match ID
+    // Stage 1: Try scraping __NEXT_DATA__ from the HTML Page first
+    const response = await fetch(`${PROXY_URL}${encodeURIComponent(cricinfoUrl)}`);
+    const data = await response.json();
+    
+    if (data.contents) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(data.contents, "text/html");
+      const scriptTag = doc.getElementById('__NEXT_DATA__');
+      
+      if (scriptTag) {
+        const jsonData = JSON.parse(scriptTag.textContent);
+        const rawData = jsonData.props?.appPageProps?.data || jsonData.props?.pageProps?.data || {};
+        const content = rawData.content || rawData.data?.content;
+
+        if (content && content.innings) {
+          return {
+            innings: content.innings,
+            commentary: content.comments || content.recentBallCommentary || [],
+            players: content.matchPlayers || {},
+            status: content.match?.statusText || 'Live'
+          };
+        }
+      }
+    }
+
+    console.log("HTML Scraping failed or blocked. Falling back to JSON endpoint...");
+
+    // Stage 2: Fallback to Legacy JSON API endpoint using Match ID
     const cleanUrl = cricinfoUrl.split('?')[0].replace(/\/live-cricket-score|\/full-scorecard|\/match-report/i, '');
     const tokens = cleanUrl.split('/');
     let matchId = null;
@@ -131,25 +157,24 @@ export const fetchMatchDetails = async (cricinfoUrl) => {
       const m = tokens[i].match(/(\d{6,8})/);
       if (m) {
         matchId = m[1];
-        break; // break at the LAST digit grouping (which is the match slug)
+        break;
       }
     }
 
-    if (!matchId) throw new Error("Could not parse Match ID from URL");
+    if (!matchId) throw new Error("Could not parse Match ID for fallback");
 
     const jsonUrl = `https://www.espncricinfo.com/ci/engine/match/${matchId}.json`;
-    const response = await fetch(`${PROXY_URL}${encodeURIComponent(jsonUrl)}`);
-    const data = await response.json();
+    const jsonResp = await fetch(`${PROXY_URL}${encodeURIComponent(jsonUrl)}`);
+    const jsonData = await jsonResp.json();
     
-    if (!data.contents) throw new Error("No data contents");
+    if (!jsonData.contents) throw new Error("No data contents on JSON fallback");
 
-    const json = JSON.parse(data.contents);
-    if (!json.match) throw new Error("Match details unavailable inside response node");
+    const json = JSON.parse(jsonData.contents);
+    if (!json.match) throw new Error("Match details unavailable inside JSON fallback");
 
     const liveScore = json.live || {};
-    const playerMap = json.player || {}; // Dictionary of players
+    const playerMap = json.player || {};
 
-    // Map Batsmen
     const batsmen = (liveScore.batting || []).map(bat => {
       const pDetail = playerMap[bat.player_id] || {};
       return {
@@ -162,7 +187,6 @@ export const fetchMatchDetails = async (cricinfoUrl) => {
       };
     });
 
-    // Map Bowlers
     const bowlers = (liveScore.bowling || []).map(bowl => {
       const pDetail = playerMap[bowl.player_id] || {};
       return {
@@ -185,7 +209,7 @@ export const fetchMatchDetails = async (cricinfoUrl) => {
       ],
       commentary: (json.comms || []).map(c => ({
         overNumber: c.overs || null,
-        title: c.text ? c.text.replace(/<[^>]*>/g, '') : '', // strip HTML
+        title: c.text ? c.text.replace(/<[^>]*>/g, '') : '',
         text: c.commentary || ''
       })),
       players: playerMap,
@@ -194,6 +218,6 @@ export const fetchMatchDetails = async (cricinfoUrl) => {
 
   } catch (err) {
     console.error("Scraping Detailed Match stats failed:", err);
-    return null; // Fail gracefully
+    return null; // Graceful fallback
   }
 };

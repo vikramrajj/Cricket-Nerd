@@ -123,8 +123,17 @@ export const fetchMatchDetails = async (cricinfoUrl) => {
 
   try {
     // 1. Extract Match ID
-    const matchIdMatch = cricinfoUrl.match(/\/(\d{6,8})(?:\/|\.|$)/);
-    const matchId = matchIdMatch ? matchIdMatch[1] : null;
+    const cleanUrl = cricinfoUrl.split('?')[0].replace(/\/live-cricket-score|\/full-scorecard|\/match-report/i, '');
+    const tokens = cleanUrl.split('/');
+    let matchId = null;
+    
+    for (let i = tokens.length - 1; i >= 0; i--) {
+      const m = tokens[i].match(/(\d{6,8})/);
+      if (m) {
+        matchId = m[1];
+        break; // break at the LAST digit grouping (which is the match slug)
+      }
+    }
 
     if (!matchId) throw new Error("Could not parse Match ID from URL");
 

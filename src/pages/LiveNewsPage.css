@@ -26,18 +26,20 @@
 
 .match-card {
   min-width: 320px;
-  background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(26, 54, 40, 0.85) !important; /* explicitly force dark green glass */
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   transition: transform var(--transition-fast), border-color var(--transition-fast);
   position: relative;
 }
 
 .match-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(212, 175, 55, 0.3); /* gold hint */
+  border-color: var(--accent-gold) !important;
+  box-shadow: 0 12px 40px rgba(212, 175, 55, 0.15);
 }
 
 .match-status {
@@ -71,17 +73,18 @@
 .team-name {
   font-size: 1.2rem;
   font-weight: 600;
+  color: #ffffff !important; /* Force white text */
 }
 
 .team-score {
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--accent-gold);
+  color: var(--accent-gold) !important;
 }
 
 .match-details {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: #a0bba8 !important; /* Force legible green-grey */
   padding-top: 1rem;
   border-top: 1px dashed rgba(255, 255, 255, 0.1);
 }

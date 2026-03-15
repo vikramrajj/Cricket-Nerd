@@ -153,22 +153,24 @@ const MatchCenterModal = ({ match, data, onClose }) => {
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000,
-      background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+      background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
     }}>
       <div className="glass-panel animate-fade-in" style={{
         width: '100%', maxWidth: '800px', height: '85vh', overflowY: 'auto',
-        borderRadius: '20px', display: 'flex', flexDirection: 'column', background: 'var(--bg-card)'
+        borderRadius: '20px', display: 'flex', flexDirection: 'column', 
+        background: 'rgba(20, 42, 31, 1)', border: '1px solid rgba(255,255,255,0.12)',
+        boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
       }}>
         {/* Header */}
         <div style={{
-          padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
+          padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)',
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'
         }}>
           <div>
             <div style={{ color: 'var(--accent-gold)', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '0.3rem' }}>Match Center</div>
-            <h2 style={{ color: '#fff', margin: 0 }}>{match.team1.name} <span style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>vs</span> {match.team2.name}</h2>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.3rem' }}>{match.currentDetails}</div>
+            <h2 style={{ color: '#ffffff', margin: 0 }}>{match.team1.name} <span style={{ color: '#a0bba8', fontSize: '1rem' }}>vs</span> {match.team2.name}</h2>
+            <div style={{ color: '#a0bba8', fontSize: '0.85rem', marginTop: '0.3rem' }}>{match.currentDetails}</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '0.5rem' }}>
             <X size={24} />
@@ -176,7 +178,7 @@ const MatchCenterModal = ({ match, data, onClose }) => {
         </div>
 
         {/* Tabs navigation */}
-        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '0 1.5rem' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '0 1.5rem', background: 'rgba(0,0,0,0.2)' }}>
           {[
             { id: 'scorecard', name: 'Scorecard', icon: <Clipboard size={16} /> },
             { id: 'squads', name: 'Squads', icon: <Users size={16} /> },

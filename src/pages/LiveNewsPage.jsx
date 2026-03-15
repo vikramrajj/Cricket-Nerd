@@ -35,7 +35,31 @@ const MatchCenterModal = ({ match, data, onClose }) => {
   }, []);
 
   const renderScorecard = () => {
-    if (!data || !data.innings || data.innings.length === 0) return <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Detailed scorecard details unavailable for this match frame structure.</p>;
+    if (!data || !data.innings || data.innings.length === 0 || !data.innings[0].batsmen || data.innings[0].batsmen.length === 0) {
+      const desc = match.currentDetails || "";
+      const details = desc.split(/[;|\n|\.]/); // split onto rows on reasonable delimiters
+      
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px' }}>
+            <h3 style={{ color: 'var(--accent-gold)', marginBottom: '1rem' }}>Match Updates (Fallback)</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              {details.filter(d => d.trim().length > 3).map((line, idx) => (
+                <div key={idx} style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', color: '#fff', fontSize: '0.95rem' }}>
+                  {line.trim()}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+            <p style={{ margin: 0 }}>Detailed Scorecard tables currently hitting CORS request limits from provider.</p>
+            <a href={match.url} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-gold)', textDecoration: 'underline', marginTop: '0.5rem', display: 'inline-block' }}>
+              View full live card on ESPN
+            </a>
+          </div>
+        </div>
+      );
+    }
     
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>

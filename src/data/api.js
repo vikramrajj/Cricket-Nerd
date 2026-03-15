@@ -117,34 +117,74 @@ export const fetchUpcomingMatches = async () => {
   ];
 };
 
-// Scrapes rich full match scoreboards from Cricinfo Next.js payloads
+// Scrapes rich full match scoreboards from Cricinfo Legacy JSON APIs
 export const fetchMatchDetails = async (cricinfoUrl) => {
   if (!cricinfoUrl) return null;
 
   try {
-    const response = await fetch(`${PROXY_URL}${encodeURIComponent(cricinfoUrl)}`);
+    // 1. Extract Match ID
+    const matchIdMatch = cricinfoUrl.match(/\/(\d{6,8})(?:\/|\.|$)/);
+    const matchId = matchIdMatch ? matchIdMatch[1] : null;
+
+    if (!matchId) throw new Error("Could not parse Match ID from URL");
+
+    const jsonUrl = `https://www.espncricinfo.com/ci/engine/match/${matchId}.json`;
+    const response = await fetch(`${PROXY_URL}${encodeURIComponent(jsonUrl)}`);
     const data = await response.json();
-    if (!data.contents) throw new Error("No HTML contents");
+    
+    if (!data.contents) throw new Error("No data contents");
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(data.contents, "text/html");
-    const scriptTag = doc.getElementById('__NEXT_DATA__');
-    if (!scriptTag) throw new Error("__NEXT_DATA__ payload missing");
+    const json = JSON.parse(data.contents);
+    if (!json.match) throw new Error("Match details unavailable inside response node");
 
-    const jsonData = JSON.parse(scriptTag.textContent);
-    const content = jsonData.props?.appPageProps?.data?.data?.content;
+    const liveScore = json.live || {};
+    const playerMap = json.player || {}; // Dictionary of players
 
-    if (!content) throw new Error("Content node missing");
+    // Map Batsmen
+    const batsmen = (liveScore.batting || []).map(bat => {
+      const pDetail = playerMap[bat.player_id] || {};
+      return {
+        player: { fullName: pDetail.popular_name || pDetail.card_short || `Player ${bat.player_id}` },
+        runs: bat.runs || 0,
+        balls: bat.balls_faced || 0,
+        fours: bat.fours || 0,
+        sixes: bat.sixes || 0,
+        strikeRate: bat.strike_rate || '0'
+      };
+    });
+
+    // Map Bowlers
+    const bowlers = (liveScore.bowling || []).map(bowl => {
+      const pDetail = playerMap[bowl.player_id] || {};
+      return {
+        player: { fullName: pDetail.popular_name || pDetail.card_short || `Player ${bowl.player_id}` },
+        overs: bowl.overs || '0.0',
+        maidens: bowl.maidens || 0,
+        runs: bowl.conceded || 0,
+        wickets: bowl.wickets || 0,
+        economy: bowl.economy_rate || '0'
+      };
+    });
 
     return {
-      innings: content.innings || [],
-      commentary: content.recentBallCommentary || [],
-      players: content.matchPlayers || {},
-      status: content.match?.statusText || 'Live',
-      livePerformance: content.livePerformance || null
+      innings: [
+        {
+          team: { name: json.match?.current_summary || 'Live Inning' },
+          batsmen: batsmen.length > 0 ? batsmen : [],
+          bowlers: bowlers.length > 0 ? bowlers : []
+        }
+      ],
+      commentary: (json.comms || []).map(c => ({
+        overNumber: c.overs || null,
+        title: c.text ? c.text.replace(/<[^>]*>/g, '') : '', // strip HTML
+        text: c.commentary || ''
+      })),
+      players: playerMap,
+      status: json.match?.status_text || 'Live'
     };
+
   } catch (err) {
     console.error("Scraping Detailed Match stats failed:", err);
-    return null; // Fail gracefully: component handles null gracefully
+    return null; // Fail gracefully
   }
 };

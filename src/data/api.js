@@ -137,7 +137,26 @@ export const fetchMatchDetails = async (cricinfoUrl) => {
 
         if (content && content.innings) {
           return {
-            innings: content.innings,
+            innings: content.innings.map(inn => ({
+              team: { name: inn.team?.name || 'Innings' },
+              batsmen: (inn.inningBatsmen || inn.batsmen || []).map(b => ({
+                player: { fullName: b.player?.fullName || `Player ${b.player?.id || ''}` },
+                runs: b.runs || 0,
+                balls: b.balls || 0,
+                fours: b.fours || 0,
+                sixes: b.sixes || 0,
+                strikeRate: b.strikeRate || '0.0',
+                dismissal: b.dismissalText || ''
+              })),
+              bowlers: (inn.inningBowlers || inn.bowlers || []).map(b => ({
+                player: { fullName: b.player?.fullName || `Bowler ${b.player?.id || ''}` },
+                overs: b.overs || '0.0',
+                maidens: b.maidens || 0,
+                runs: b.runs || 0,
+                wickets: b.wickets || 0,
+                economy: b.economy || '0.0'
+              }))
+            })),
             commentary: content.comments || content.recentBallCommentary || [],
             players: content.matchPlayers || {},
             status: content.match?.statusText || 'Live'
